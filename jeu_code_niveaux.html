@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jeu : Trouve le Code</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background:#f3f3f3; }
+    .container { max-width: 480px; margin: auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 0 10px rgba(0,0,0,0.1);}    
+    input { padding: 14px; width: 100%; margin-top: 10px; font-size:18px; border-radius:8px; border:1px solid #ccc; }
+    button { padding: 14px; margin-top: 10px; width: 100%; font-size:18px; border:none; background:#007bff; color:white; border-radius:8px; }
+    button:hover { background:#0056d2; }
+    .hidden { display: none; }
+    .success { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+    #scoreboard { margin-top:20px; background:#fafafa; padding:15px; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Jeu : Trouve le Code</h2>
+
+    <!-- Paramètres administrateur -->
+    <div id="admin-panel">
+      <h3>Paramètres Administrateur</h3>
+      <p>Entre la liste des codes (séparés par des virgules) :</p>
+      <input id="adminCodes" placeholder="Exemple : 12,45,789" />
+      <p>Nom de l'élève :</p>
+      <input id="studentName" placeholder="Nom" />
+      <button onclick="startGame()">Lancer le jeu</button>
+    </div>
+
+    <!-- Zone de jeu -->
+    <div id="game-panel" class="hidden">
+      <p>Temps restant : <span id="timer">30:00</span></p>
+      <h3>Points : <span id="points">0</span></h3>
+      <p>Entre le code :</p>
+      <input id="playerInput" />
+      <button onclick="checkCode()">Valider</button>
+      <button onclick="endGame()" style="background:#dc3545;">Arrêter le jeu</button>
+      <p id="message"></p>
+    </div>
+
+    <!-- Fin du jeu -->
+    <div id="end-panel" class="hidden">
+      <h2 class="success">Fin du jeu 🎉</h2>
+      <p id="finalScore"></p>
+    </div>
+
+    <!-- Scoreboard -->
+    <div id="scoreboard">
+      <h3>Historique des codes</h3>
+      <table style="width:100%; border-collapse:collapse;">
+        <tr>
+          <th style="border-bottom:1px solid #ccc;">Codes corrects</th>
+          <th style="border-bottom:1px solid #ccc;">Codes erronés</th>
+        </tr>
+        <tr>
+          <td id="goodCodes" style="vertical-align:top;"></td>
+          <td id="badCodes" style="vertical-align:top;"></td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+// ===== VARIABLES GLOBALES =====
+let codes = [];
+let usedCodes = new Set();
+let points = 0;
+let timeLeft = 1800; // 30 minutes
+let timerInterval = null;
+let student = "";
+
+// ===== SCORES =====
+function loadScores() {
+  const saved = JSON.parse(localStorage.getItem("scores") || "[]");
+  const list = document.getElementById("scoresList");
+  if (!list) return;
+  list.innerHTML = "";
+  saved.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = `${s.name} : ${s.points} pts`;
+    list.appendChild(li);
+  });
+}
+
+function saveScore(name, points) {
+  const saved = JSON.parse(localStorage.getItem("scores") || "[]");
+  saved.push({ name, points });
+  localStorage.setItem("scores", JSON.stringify(saved));
+  loadScores();
+}
+
+// ===== DEMARRAGE DU JEU =====
+function startGame() {
+  const input = document.getElementById("adminCodes").value.trim();
+  student = document.getElementById("studentName").value.trim();
+
+  if (!student) {
+    alert("Merci d'entrer le nom de l'élève");
+    return;
+  }
+
+  if (!input) {
+    alert("Merci d'entrer au moins un code");
+    return;
+  }
+
+  codes = input.split(',').map(c => c.trim());
+  usedCodes = new Set();
+  points = 0;
+  timeLeft = 1800;
+
+  document.getElementById("points").textContent = points;
+  updateTimerDisplay();
+
+  // reset historique
+  document.getElementById("goodCodes").innerHTML = "";
+  document.getElementById("badCodes").innerHTML = "";
+
+  document.getElementById("admin-panel").classList.add("hidden");
+  document.getElementById("game-panel").classList.remove("hidden");
+
+  startTimer();
+}
+
+// ===== JEU =====
+function checkCode() {
+  const inputField = document.getElementById("playerInput");
+  const playerValue = inputField.value.trim();
+  const message = document.getElementById("message");
+
+  if (!playerValue) return;
+
+  if (codes.includes(playerValue) && !usedCodes.has(playerValue)) {
+    points += 1;
+    usedCodes.add(playerValue);
+    document.getElementById("goodCodes").innerHTML += `<div>${playerValue}</div>`;
+    message.textContent = "Bonne réponse ! +1 point";
+    message.className = "success";
+  } else {
+    points -= 2;
+    timeLeft = Math.max(0, timeLeft - 120);
+    document.getElementById("badCodes").innerHTML += `<div>${playerValue}</div>`;
+    message.textContent = "Code incorrect ou déjà utilisé ! -2 points et -2 minutes";
+    message.className = "error";
+  }
+
+  document.getElementById("points").textContent = points;
+  updateTimerDisplay();
+  inputField.value = "";
+
+  if (timeLeft <= 0) endGame();
+}
+
+// ===== TIMER =====
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  document.getElementById("timer").textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// ===== FIN =====
+function endGame() {
+  clearInterval(timerInterval);
+  document.getElementById("game-panel").classList.add("hidden");
+  document.getElementById("end-panel").classList.remove("hidden");
+  document.getElementById("finalScore").textContent = `${student}, ton score final est : ${points} points`;
+  saveScore(student, points);
+}
+
+window.onload = loadScores;
+</script>
+</body>
+</html>
