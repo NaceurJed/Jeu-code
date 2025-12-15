@@ -113,7 +113,7 @@ function startGame() {
   codes = input.split(',').map(c => c.trim());
   usedCodes = new Set();
   points = 0;
-  timeLeft = 1800;
+  timeLeft = 1200;
 
   document.getElementById("points").textContent = points;
   updateTimerDisplay();
@@ -144,9 +144,9 @@ function checkCode() {
     message.className = "success";
   } else {
     points -= 2;
-    timeLeft = Math.max(0, timeLeft - 120);
+    timeLeft = Math.max(0, timeLeft - 60);
     document.getElementById("badCodes").innerHTML += `<div>${playerValue}</div>`;
-    message.textContent = "Code incorrect ou déjà utilisé ! -2 points et -2 minutes";
+    message.textContent = "Code incorrect ou déjà utilisé ! -2 points et -1 minutes";
     message.className = "error";
   }
 
