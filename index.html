@@ -71,7 +71,7 @@
 let codes = [];
 let usedCodes = new Set();
 let points = 0;
-let timeLeft = 1200; // 30 minutes
+let timeLeft = 1200; // 20 minutes
 let timerInterval = null;
 let student = "";
 
@@ -144,9 +144,9 @@ function checkCode() {
     message.className = "success";
   } else {
     points -= 2;
-    timeLeft = Math.max(0, timeLeft - 60);
+    timeLeft = Math.max(0, timeLeft - 0);
     document.getElementById("badCodes").innerHTML += `<div>${playerValue}</div>`;
-    message.textContent = "Code incorrect ou déjà utilisé ! -2 points et -1 minutes";
+    message.textContent = "Code incorrect ou déjà utilisé ! -2 points";
     message.className = "error";
   }
 
